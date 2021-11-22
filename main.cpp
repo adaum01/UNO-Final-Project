@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 #include <queue>
+#include <algorithm>
+
 using namespace std;
 
 class UNO_game {
@@ -14,8 +16,13 @@ public:
         int cardNumber; // -1 = no number, 0-9 for rest
         char cardType; // R = reg, 2 = +2, 4 = +4W, W = wild, S = skip, X = reverse
     public:
-        Card(string a, int col, int num, char type) {
+        /**Card(string a , int col, int num, char type) {
             ID = a;
+            cardColor = col;
+            cardNumber = num;
+            cardType = type;
+        } **/
+        Card(int col, int num, char type) {
             cardColor = col;
             cardNumber = num;
             cardType = type;
@@ -47,12 +54,32 @@ public:
      */
     class Deck {
     protected:
-        int drawCount = 30;
+        int drawCount = 0;
     public:
         //pointer to card last placed in discard pile
         Card *lastCard;
 
         queue<Card> *deck; //= new queue<Card>;         //create constructor for deck
+        Deck(){
+            for(int j=1; j<5;j++) {  //loops through colors
+                deck->push(Card(j, 0, 'R')); //add '0' card
+                deck->push(Card(j, -1, 'S')); //two skip cards for each color
+                deck->push(Card(j, -1, 'S'));
+                deck->push(Card(j, -1, 'X')); //two reverse cards for each color
+                deck->push(Card(j, -1, 'X'));
+                deck->push(Card(j, -1, '2')); //two draw 2 cards for each color
+                deck->push(Card(j, -1, '2'));
+                for (int i = 1; i < 10; i++){
+                    deck->push(Card(j, i, 'R')); //adds number card (two of each color)
+                    deck->push(Card(j, i, 'R'));
+                }
+
+            }
+            for(int i=0;i<4;i++){                              //adds 4 wild and 4 draw 4 cards to deck
+                deck->push(Card(0, -1, 'W'));
+                deck->push(Card(0, -1, '4'));
+            }
+        }
 
         Card draw(){
             Card retCard = deck->front();
@@ -66,13 +93,23 @@ public:
             lastCard = &c;
         }
 
+        //shuffle checks drawCount to determine if the "discard" pile needs to be shuffled
+        //pops everything off the deck onto a vector, shuffles it, and adds back to the queue
         void shuffle() {
-            if (drawCount >= 30) {}
-            vector<Card> unshuffled;
-            while(deck){
-                unshuffled.push_back(deck->pop());
-
-            }
+            if (drawCount >= 30) {
+                vector<Card> unshuffled;
+                while (deck) {
+                    unshuffled.push_back(deck->front());
+                    deck->pop();
+                }
+                random_shuffle(unshuffled.begin(), unshuffled.end());
+                while (!unshuffled.empty()) {
+                    deck->push(unshuffled.back());
+                    unshuffled.pop_back();
+                }
+                drawCount = 0;
+            }else{}
+            return;
         }
     };               //Implement shuffle
 
@@ -85,7 +122,10 @@ public:
         string playerName = "<IMPLEMENT SETTING PLAYER NAME>";
         vector<Card> *hand;
         bool skipStatus = false;
-
+        player(string name){
+            playerName = name;
+            hand = nullptr;
+        }
         bool emptyHand(){
             return hand->empty();
         }
@@ -102,7 +142,9 @@ public:
             Card retCard = hand->at(i);
             return &retCard;
         }
-
+        void addCard(Card n){
+            hand->push_back(n);
+        }
         void printHand(){       //DO NOT CALL ON EMPTY HAND
             cout << "\n";
             for(int i = 0; i < hand->size(); i++){
@@ -136,9 +178,42 @@ public:
         //if empty hand , draw card else loop until valid card
     };
 
-    Deck *deck;
-    vector<player> players;
-    int round;
+    void gameStart(){
+        Deck* cardDeck = new Deck(); //creates new deck and allocates cards
+        cardDeck->shuffle();         // shuffles deck
+        vector<player> players;
+        char menu = 'y';
+        string name;
+        int type;
+        while(menu=='y'){
+            cout<<"Would you like to add a human player or AI? Press 0 for human and 1 for AI";
+            cin>>type;
+            if(type==0){
+                cout<<"Enter name:";
+                cin>>name;
+                players.push_back(humanPlayer(name));
+            }else if(type==1){
+                cout<<"Enter name:";
+                cin>>name;
+                players.push_back(aiPlayer(name));
+            }
+            cout<<"Would you like to add another player? Press 'y' if you want to add another player";
+        }
+        for(int i = 0; i<players.size();i++){
+            for(int j=0; j<7;j++){
+                players[i].addCard(cardDeck->draw());
+            }
+        }
+    }
+    bool gameEnd(){
+        for(int i = 0; i<players.size();i++){
+            if(players[i].emptyHand()==true){
+                return true;
+            }
+        }
+        return false;
+    }
+
 
 
 
