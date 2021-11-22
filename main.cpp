@@ -65,7 +65,7 @@ public:
         Card* draw(){
             Card *retCard = deck.front();
             deck.pop();
-
+            drawCount++;
             return retCard;
         }
 
@@ -261,6 +261,7 @@ public:
             }
         }
     }
+
     bool gameEnd(){
         for(int i = 0; i<players.size();i++){
             if(players[i]->emptyHand()==true){
