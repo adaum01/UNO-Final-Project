@@ -3,7 +3,10 @@
 #include <string>
 #include <vector>
 #include <queue>
-#include <algorithm>
+#include <algorithm> //<-- used in deck shuffle (shuffling a vector)
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
 using namespace std;
 
@@ -13,7 +16,7 @@ public:
     protected:
         string ID;
         int cardColor; // 0 = no color (works with any color), 1 = Red, 2 = Green, 3 = Blue, 4 = Yellow
-        int cardNumber; // -1 = no number, 0-9 for rest
+        int cardNumber; // -1 = skip, -2 = reverse, -3 = draw 2 2, -4 = wild, -5 = wild draw 4, 0-9 for rest
         char cardType; // R = reg, 2 = +2, 4 = +4W, W = wild, S = skip, X = reverse
     public:
         /**Card(string a , int col, int num, char type) {
@@ -43,6 +46,53 @@ public:
         char type(){
             return cardType;
         }
+
+        string getName(){
+            string color, number, name;
+            switch(cardColor){
+                case 0:
+                    color = "";
+                    break;
+                case 1:
+                    color = "Red ";
+                    break;
+                case 2:
+                    color = "Green ";
+                    break;
+                case 3:
+                    color = "Blue ";
+                    break;
+                case 4:
+                    color = "Yellow ";
+                    break;
+            }// -1 = skip, -2 = reverse, -3 = draw 2 2, -4 = wild, -5 = wild draw 4, 0-9 for rest
+            switch(cardNumber){
+                case -1:
+                    number = "Skip";
+                    break;
+                case -2:
+                    number = "Reverse";
+                    break;
+                case -3:
+                    number = "Draw 2";
+                    break;
+                case -4:
+                    number = "Wild";
+                    break;
+                case -5:
+                    number = "Wild Draw 4";
+                    break;
+                default:
+                    number = to_string(cardNumber);
+                    break;
+            }
+            name = color+number;
+            return name;
+        }
+
+        void setColor(int i){
+            cardColor = i;
+        }
     };
 
 
@@ -69,9 +119,9 @@ public:
             return retCard;
         }
 
-        void discard(Card c) {
-            deck.push(&c);
-            lastCard = &c;
+        void discard(Card *c) {
+            deck.push(c);
+            lastCard = c;
         }
         /**void deckPrint(){ //prints out deck size, used for testing
             cout << deck.size() << "\n";
@@ -83,7 +133,7 @@ public:
         void shuffle() {
             if (drawCount >= 30) {
                 vector<Card*> unshuffled;
-               while (deck.size()!=0) { //!= nullptr added when testing with printing
+                while (deck.size()!=0) { //!= nullptr added when testing with printing
                     unshuffled.push_back(deck.front());
                     /**cout<<deck.front()->color(); //Testing to see if properly printed
                     cout<<deck.front()->number();
@@ -115,7 +165,8 @@ public:
     public:
         string playerName = "<PLAYER NAME>";
         vector<Card*> hand;
-        bool skipStatus = false;
+        int handCount;
+        bool aiStatus;
         player(string name){
             playerName = name;
         }
@@ -135,18 +186,29 @@ public:
             Card *retCard = hand.at(i);
             return retCard;
         }
+
+        Card* discardCard(int i){
+            if(i > hand.size()-1 || emptyHand())
+                return nullptr;
+            Card *retCard = hand.at(i);
+            hand.at(i) = hand.at(hand.size()-1);
+            hand.pop_back();
+            return retCard;
+        }
+
         void addCard(Card* n){
             hand.push_back(n);
         }
         void printHand(){       //DO NOT CALL ON EMPTY HAND
             cout << "\n";
             for(int i = 0; i < hand.size(); i++){
-                cout << i+1 << " - "<< getCard(i)->name();
+                cout <<"[Card "<< i+1 << ": "<< getCard(i)->getName()<<"] | ";
             }
             cout << "\n";
         }
 
-        virtual char playRound() = 0;
+        virtual string playRound() = 0;
+        virtual void unoInput(Deck *deck) = 0;
     };
 
     /*
@@ -157,19 +219,51 @@ public:
     public:
         humanPlayer(string name):player(name){
             playerName = name;
+            aiStatus = false;
         }
-        char playRound() override{
-            char retChar;
-            cout << playerName << ", your turn! Here are your cards";
+        string playRound() override{
+            string retString;
+            bool valid = false;
+            cout << playerName << ", it's your turn! Here are your cards:\n";
             printHand();
-            cout << "To play a card, select it's number, to draw a card, enter \"d\"";
-            cin >> retChar;
-            if(retChar != 'D' || (retChar - '0') > hand.size()-1);{
-                cin >> retChar;
+            cout << "\nTo play a card, select it's number, to draw a card, enter \"d\"\n";
+            cin >> retString;
+            while(!valid) {
+                if (retString != "d" && !((stoi(retString) - 1 ) <= hand.size() - 1 && stoi(retString) - 1 >= 0)) {
+                    cout << "\nInvalid Input - Choose another card\nHere are your cards:\n";
+                    printHand();
+                    cin >> retString;
+                }
+                else {
+                    valid = true;
+                }
             }
-            //Check if card is valid for the last card pushed discarded
+            return retString;
+        }
+
+        void unoInput(Deck *deck) override{
+            char playerInput;
+            cout << "\nDo you have UNO? Type 'y' for yes and 'n' for no.\n";
+            cin >> playerInput;
+            if(playerInput == 'y' && unoCheck()){
+                cout << "\n" << this->playerName << " has UNO!\n";
+                return;
+            }
+            else if(playerInput == 'n' && !unoCheck()){
+                return;
+            }
+            else if(playerInput == 'y' && !unoCheck()){
+                cout << "\n" << this->playerName << " does NOT have UNO.\n";
+            }
+            else{
+                cout << "\nWRONG! "<< this->playerName << " has UNO, draw two cards.\n";
+                this->addCard(deck->draw());
+                this->addCard(deck->draw());
+            }
         }
     };
+
+
 
     /*
      * TO-DO
@@ -177,17 +271,34 @@ public:
      */
     class aiPlayer : public player{
     public:
+        //used for trying out cards in AI player hands
+
         aiPlayer(string name):player(name){
             playerName = name;
+            aiStatus = true;
+            handCount = 1;
         }
-        char playRound() override{
-            return 0;
+
+        string playRound() override{
+            if(handCount > hand.size()){
+                handCount = 1;
+                return "d";
+            }
+            else
+                return to_string(handCount);
         }
         //if empty hand , draw card else loop until valid card
+
+        void unoInput(Deck *deck) override{
+            if(unoCheck())
+                cout << "\n" << playerName << " has UNO!\n";
+            return;
+        }
     };
 
     Deck *cardDeck;
     vector<player*> players;
+    Card *wildCard;
 
     void deckInit(Deck *d){
         for(int j=1; j<5;j++) {  //loops through colors
@@ -197,13 +308,13 @@ public:
             d->deck.push(temp);                        //two skip cards for each color
             temp = new Card(j, -1, 'S');
             d->deck.push(temp);
-            temp = new Card(j, -1, 'X'); //two reverse cards for each color
+            temp = new Card(j, -2, 'X'); //two reverse cards for each color
             d->deck.push(temp);
-            temp = new Card(j, -1, 'X');
+            temp = new Card(j, -2, 'X');
             d->deck.push(temp);
-            temp = new Card(j, -1, '2'); //two draw 2 cards for each color
+            temp = new Card(j, -3, '2'); //two draw 2 cards for each color
             d->deck.push(temp);
-            temp = new Card(j, -1, '2');
+            temp = new Card(j, -3, '2');
             d->deck.push(temp);
             for (int i = 1; i < 10; i++){ //adds 1-9 cards for each color
                 temp = new Card(j, i, 'R');
@@ -214,9 +325,9 @@ public:
 
         }
         for(int i=0;i<4;i++){                              //adds 4 wild and 4 draw 4 cards to deck
-            Card *temp = new Card(0, -1, 'W');
+            Card *temp = new Card(0, -4, 'W');
             d->deck.push(temp);
-            temp = new Card(0, -1, '4');
+            temp = new Card(0, -5, '4');
             d->deck.push(temp);
         }
 
@@ -227,9 +338,10 @@ public:
      * Wrong button checks for "menu loop" and player addition
      */
     void gameStart(){
+        wildCard = new Card(0, -4, 'W');
         cardDeck = new Deck(); //creates new deck and allocates cards
         deckInit(cardDeck);//initializes deck with all 108 cards
-       //cardDeck->deckPrint();
+        //cardDeck->deckPrint();
         cardDeck->shuffle();         // shuffles deck
         //cardDeck->deckPrint();
         char menu = 'y';
@@ -237,10 +349,10 @@ public:
         int type;
         int AICount = 1;
         while(menu=='y'){
-            cout<<"Would you like to add a human player or AI? Press 0 for human and 1 for AI";
+            cout<<"Would you like to add a human player or AI?\nPress 0 for human and 1 for AI:\n";
             cin>>type;
             if(type==0){ //runs if user wants to add human player
-                cout<<"Enter name:";
+                cout<<"Enter name:\n";
                 cin>>name;
                 player *newPlayer = new humanPlayer(name);
                 players.push_back(newPlayer);
@@ -251,7 +363,10 @@ public:
                 players.push_back(newPlayer); // Push back aiPLayer# to players vector
                 AICount++;
             }
-            cout<<"Would you like to add another player? Press 'y' if you want to add another player or 'n' if not";
+
+            cardDeck->lastCard = cardDeck->deck.back();
+
+            cout<<"Would you like to add another player? \nPress 'y' if you want to add another player or 'n' if not\n";
             cin>>menu;
 
         }
@@ -262,29 +377,211 @@ public:
         }
     }
 
+    int roundCounter = 0;
+    bool reverseStatus = false;
+
+    bool compareCard(Card* playedCard){
+        //separate results depending on if player is AI or not
+        if(players.at(roundCounter)->aiStatus == false) {
+            if (playedCard->number() == cardDeck->lastCard->number())
+                return true;
+            else if (playedCard->color() == cardDeck->lastCard->color())
+                return true;
+            else if (playedCard->color() == 0)
+                return true;
+            else
+                cout << "\nInvalid Card, Please choose another card\nLast Card Played: "
+                     << cardDeck->lastCard->getName() << "\n";
+            return false;
+        }
+        else{
+            if (playedCard->number() == cardDeck->lastCard->number()) {
+                cout << "\n" << players.at(roundCounter)->playerName << "'s turn!\n";
+                cout << players.at(roundCounter)->playerName << " played card: " << playedCard->getName();
+                players.at(roundCounter)->handCount = 1;
+                return true;
+            }
+            else if (playedCard->color() == cardDeck->lastCard->color()) {
+                cout << "\n" << players.at(roundCounter)->playerName << "'s turn!\n";
+                cout << players.at(roundCounter)->playerName << " played card: " << playedCard->getName();
+                players.at(roundCounter)->handCount = 1;
+                return true;
+            }
+            else if (playedCard->color() == 0) {
+                cout << "\n" << players.at(roundCounter)->playerName << "'s turn!\n";
+                cout << players.at(roundCounter)->playerName << " played card: " << playedCard->getName();
+                players.at(roundCounter)->handCount = 1;
+                return true;
+            }
+            else {
+                players.at(roundCounter)->handCount++;
+                return false;
+            }
+        }
+    }
+
+
+
+    void incrementRound(){ //Increments round counter accounting for reverseStatus
+        if(reverseStatus){
+            roundCounter--;
+            if(roundCounter<0){
+                roundCounter = players.size()-1;
+            }
+        }
+        else{
+            roundCounter++;
+            if(roundCounter > players.size()-1){
+                roundCounter = 0;
+            }
+        }
+    }
+
+    void cardEffect(Card *card, Deck *deck){
+        char playerInput;
+        bool valid = false;
+        switch(card->type()){
+            case '2':
+                incrementRound();
+                players.at(roundCounter)->addCard(deck->draw());
+                players.at(roundCounter)->addCard(deck->draw());
+                break;
+            case '4':
+                while(!valid){
+
+                    //1 = Red, 2 = Green, 3 = Blue, 4 = Yellow
+                    if(players.at(roundCounter)->aiStatus == false) {
+                        cout << "\nWhat color would you like to choose? Enter 'r' for red, 'g' for green, 'b' for blue, or 'y' for yellow.\n";
+                        cin >> playerInput;
+                        switch (playerInput) {
+                            case ('r'):
+                                valid = true;
+                                wildCard->setColor(1);
+                                break;
+                            case ('g'):
+                                valid = true;
+                                wildCard->setColor(2);
+                                break;
+                            case ('b'):
+                                valid = true;
+                                wildCard->setColor(3);
+                                break;
+                            case ('y'):
+                                valid = true;
+                                wildCard->setColor(4);
+                                break;
+                        }
+                    }
+                    else{
+                        valid = true;
+                        wildCard->setColor(2); //add random chooser
+                    }
+                }
+                deck->lastCard = wildCard;
+
+                incrementRound();
+                players.at(roundCounter)->addCard(deck->draw());
+                players.at(roundCounter)->addCard(deck->draw());
+                players.at(roundCounter)->addCard(deck->draw());
+                players.at(roundCounter)->addCard(deck->draw());
+                break;
+            case 'W':
+                while(!valid){
+                    if(players.at(roundCounter)->aiStatus == false) {
+                        cout << "\nWhat color would you like to choose? Enter 'r' for red, 'g' for green, 'b' for blue, or 'y' for yellow.";
+                        cin >> playerInput;
+                        //1 = Red, 2 = Green, 3 = Blue, 4 = Yellow
+
+                        switch (playerInput) {
+                            case ('r'):
+                                valid = true;
+                                wildCard->setColor(1);
+                                break;
+                            case ('g'):
+                                valid = true;
+                                wildCard->setColor(2);
+                                break;
+                            case ('b'):
+                                valid = true;
+                                wildCard->setColor(3);
+                                break;
+                            case ('y'):
+                                valid = true;
+                                wildCard->setColor(4);
+                                break;
+                        }
+                    }
+                    else{
+                        valid = true;
+                        wildCard->setColor(4); //add random chooser
+                    }
+                }
+                deck->lastCard = wildCard;
+                break;
+            case 'S':
+                incrementRound();
+                break;
+            case 'X':
+                reverseStatus = !reverseStatus;
+                break;
+            default: //regular card
+                break;
+        }
+        return;
+    }
+
+    void gamePlay(){
+        string playerInput;
+        player *currPlayer = players.at(roundCounter);
+
+        bool valid = false;
+        cout << "\n\n\n\nLast Card Played: " << cardDeck->lastCard->getName() <<"\n\n";
+
+        while(!valid){
+            playerInput = currPlayer->playRound();
+            if(playerInput=="d"){
+                if(players.at(roundCounter)->aiStatus == true) {
+                    cout << "\n" << players.at(roundCounter)->playerName << "'s turn!\n";
+                    cout<< players.at(roundCounter)->playerName <<" drew a card from the deck.";
+                }
+                currPlayer->addCard(cardDeck->draw());
+                valid = true;
+            }
+            else{
+                int playerInputInt = stoi(playerInput);
+                if(compareCard(currPlayer->getCard(playerInputInt-1))){
+                    Card *tmp = currPlayer->getCard(playerInputInt-1);
+                    cardDeck->discard(currPlayer->discardCard(playerInputInt-1));
+                    cardEffect(tmp, cardDeck);
+                    currPlayer->unoInput(cardDeck);
+                    valid = true;
+                }
+            }
+        }
+
+        cardDeck->shuffle();
+
+        //Increment Round Counter
+        incrementRound();
+    }
+
     bool gameEnd(){
         for(int i = 0; i<players.size();i++){
             if(players[i]->emptyHand()==true){
+                cout << "\nCongratulations " << players[i]->playerName << ", you won!\n";
                 return true;
             }
         }
         return false;
     }
-
-
-
-
 };
 
 int main() {
-
     UNO_game *game = new UNO_game;
     game->gameStart();
-    cout << "test";
-
-    //discardPile *p = new discardPile;
-    //Card *c = new Card;
-
+    while(!game->gameEnd()){
+        game->gamePlay();
+    }
 }
 
 //{Blue_0,Blue_1,Blue_1,Blue_2,Blue_2,Blue_3,Blue_3,Blue_4,Blue_4,Blue_5,Blue_5,Blue_6,Blue_6,Blue_7,Blue_7,Blue_8,Blue_8,Blue_9,Blue_9,Green_0,Green_1,Green_1,Green_2,Green_2,Green_3,Green_3,Green_4,Green_4,Green_5,Green_5,Green_6,Green_6,Green_7,Green_7,Green_8,Green_8,Green_9,Green_9,Red_0,Red_1,Red_1,Red_2,Red_2,Red_3,Red_3,Red_4,Red_4,Red_5,Red_5,Red_6,Red_6,Red_7,Red_7,Red_8,Red_8,Red_9,Red_9,Yellow_0,Yellow_1,Yellow_1,Yellow_2,Yellow_2,Yellow_3,Yellow_3,Yellow_4,Yellow_4,Yellow_5,Yellow_5,Yellow_6,Yellow_6,Yellow_7,Yellow_7,Yellow_8,Yellow_8,Yellow_9,Yellow_9,Yellow_Skip, Yellow_Skip, Blue_Skip, Blue_Skip, Green_Skip, Green_Skip, Red_Skip, Red_Skip, Yellow_Reverse, Yellow_Reverse,Blue_Reverse,Blue_Reverse,Green_Reverse,Green_Reverse,Red_Reverse, Red_Reverse, Yellow_+2, Yellow_+2, Blue_+2, Blue_+2, Green_+2, Green+2, Red_+2, Red_+2, Wild, Wild, Wild, Wild, Wild_+4, Wild_+4, Wild_+4, Wild_+4}
