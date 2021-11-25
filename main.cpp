@@ -1,12 +1,17 @@
-//running on C++ 14
+// UNO Game created by
+// Team Unicode
+// Alex Daum, Raviteja Aechan, Jonathan Lanes
+// amdaum@ncsu.edu,raechan@ncsu.edu, jmlanes@ncsu.edu,
+// ECE 309 Section 001
+// running on C++ 14
 #include <iostream>
 #include <string>
 #include <vector>
 #include <queue>
 #include <algorithm> //<-- used in deck shuffle (shuffling a vector)
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
+#include <stdio.h>   // used for random number generator for AI wild card color selection
+#include <stdlib.h>  // ^
+#include <time.h>    // ^
 
 using namespace std;
 
@@ -14,25 +19,14 @@ class UNO_game {
 public:
     class Card {
     protected:
-        string ID;
         int cardColor; // 0 = no color (works with any color), 1 = Red, 2 = Green, 3 = Blue, 4 = Yellow
-        int cardNumber; // -1 = skip, -2 = reverse, -3 = draw 2 2, -4 = wild, -5 = wild draw 4, 0-9 for rest
+        int cardNumber; // -1 = skip, -2 = reverse, -3 = draw 2, -4 = wild, -5 = wild draw 4, 0-9 for rest
         char cardType; // R = reg, 2 = +2, 4 = +4W, W = wild, S = skip, X = reverse
     public:
-        /**Card(string a , int col, int num, char type) {
-            ID = a;
-            cardColor = col;
-            cardNumber = num;
-            cardType = type;
-        } **/
         Card(int col, int num, char type) {
             cardColor = col;
             cardNumber = num;
             cardType = type;
-        }
-
-        string name() {
-            return ID;
         }
 
         int color(){
@@ -65,7 +59,7 @@ public:
                 case 4:
                     color = "Yellow ";
                     break;
-            }// -1 = skip, -2 = reverse, -3 = draw 2 2, -4 = wild, -5 = wild draw 4, 0-9 for rest
+            }
             switch(cardNumber){
                 case -1:
                     number = "Skip";
@@ -100,7 +94,6 @@ public:
     /*
      * TO-DO
      * - Constructor
-     * - shuffle function - will be called every round, check drawCount to shuffle
      */
     class Deck {
     protected:
@@ -123,39 +116,26 @@ public:
             deck.push(c);
             lastCard = c;
         }
-        /**void deckPrint(){ //prints out deck size, used for testing
-            cout << deck.size() << "\n";
-        }**/
-
 
         //shuffle checks drawCount to determine if the "discard" pile needs to be shuffled
         //pops everything off the deck onto a vector, shuffles it, and adds back to the queue
         void shuffle() {
             if (drawCount >= 30) {
                 vector<Card*> unshuffled;
-                while (deck.size()!=0) { //!= nullptr added when testing with printing
+                while (deck.size()!=0) {
                     unshuffled.push_back(deck.front());
-                    /**cout<<deck.front()->color(); //Testing to see if properly printed
-                    cout<<deck.front()->number();
-                    cout<<deck.front()->type();
-                    cout<<"\n";**/
                     deck.pop();
                 }
-                //cout<<"shuffled:";
                 random_shuffle(unshuffled.begin(), unshuffled.end());
                 while (!unshuffled.empty()) {
                     deck.push(unshuffled.back());
-                    /**cout<<unshuffled.back()->color(); //prints out shuffled deck
-                    cout<<unshuffled.back()->number();
-                    cout<<unshuffled.back()->type();
-                    cout<<"\n";**/
                     unshuffled.pop_back();
                 }
                 drawCount = 0;
             }else{}
             return;
         }
-    };               //Implement shuffle
+    };
 
     /*
      * TO - DO
@@ -263,16 +243,12 @@ public:
         }
     };
 
-
-
     /*
      * TO-DO
      * implement playRound function
      */
     class aiPlayer : public player{
     public:
-        //used for trying out cards in AI player hands
-
         aiPlayer(string name):player(name){
             playerName = name;
             aiStatus = true;
@@ -334,16 +310,13 @@ public:
     }
     /*
      * TO-DO
-     * AI name assignment,
      * Wrong button checks for "menu loop" and player addition
      */
     void gameStart(){
         wildCard = new Card(0, -4, 'W');
         cardDeck = new Deck(); //creates new deck and allocates cards
         deckInit(cardDeck);//initializes deck with all 108 cards
-        //cardDeck->deckPrint();
         cardDeck->shuffle();         // shuffles deck
-        //cardDeck->deckPrint();
         char menu = 'y';
         string name;
         int type;
@@ -357,13 +330,11 @@ public:
                 player *newPlayer = new humanPlayer(name);
                 players.push_back(newPlayer);
             }else if(type==1){
-                //string name = "placeholder";
                 string concatName = "aiPlayer" + to_string(AICount);
                 player *newPlayer = new aiPlayer(concatName);
                 players.push_back(newPlayer); // Push back aiPLayer# to players vector
                 AICount++;
             }
-
             cardDeck->lastCard = cardDeck->deck.back();
 
             cout<<"Would you like to add another player? \nPress 'y' if you want to add another player or 'n' if not\n";
@@ -419,7 +390,6 @@ public:
             }
         }
     }
-
 
 
     void incrementRound(){ //Increments round counter accounting for reverseStatus
@@ -490,7 +460,6 @@ public:
                     if(players.at(roundCounter)->aiStatus == false) {
                         cout << "\nWhat color would you like to choose? Enter 'r' for red, 'g' for green, 'b' for blue, or 'y' for yellow.";
                         cin >> playerInput;
-                        //1 = Red, 2 = Green, 3 = Blue, 4 = Yellow
 
                         switch (playerInput) {
                             case ('r'):
@@ -535,7 +504,7 @@ public:
         player *currPlayer = players.at(roundCounter);
 
         bool valid = false;
-        cout << "\n\n\n\nLast Card Played: " << cardDeck->lastCard->getName() <<"\n\n";
+        cout << "\n\n\n\nLast Card Played: " << cardDeck->lastCard->getName() <<"\n";
 
         while(!valid){
             playerInput = currPlayer->playRound();
@@ -560,8 +529,6 @@ public:
         }
 
         cardDeck->shuffle();
-
-        //Increment Round Counter
         incrementRound();
     }
 
@@ -583,5 +550,3 @@ int main() {
         game->gamePlay();
     }
 }
-
-//{Blue_0,Blue_1,Blue_1,Blue_2,Blue_2,Blue_3,Blue_3,Blue_4,Blue_4,Blue_5,Blue_5,Blue_6,Blue_6,Blue_7,Blue_7,Blue_8,Blue_8,Blue_9,Blue_9,Green_0,Green_1,Green_1,Green_2,Green_2,Green_3,Green_3,Green_4,Green_4,Green_5,Green_5,Green_6,Green_6,Green_7,Green_7,Green_8,Green_8,Green_9,Green_9,Red_0,Red_1,Red_1,Red_2,Red_2,Red_3,Red_3,Red_4,Red_4,Red_5,Red_5,Red_6,Red_6,Red_7,Red_7,Red_8,Red_8,Red_9,Red_9,Yellow_0,Yellow_1,Yellow_1,Yellow_2,Yellow_2,Yellow_3,Yellow_3,Yellow_4,Yellow_4,Yellow_5,Yellow_5,Yellow_6,Yellow_6,Yellow_7,Yellow_7,Yellow_8,Yellow_8,Yellow_9,Yellow_9,Yellow_Skip, Yellow_Skip, Blue_Skip, Blue_Skip, Green_Skip, Green_Skip, Red_Skip, Red_Skip, Yellow_Reverse, Yellow_Reverse,Blue_Reverse,Blue_Reverse,Green_Reverse,Green_Reverse,Red_Reverse, Red_Reverse, Yellow_+2, Yellow_+2, Blue_+2, Blue_+2, Green_+2, Green+2, Red_+2, Red_+2, Wild, Wild, Wild, Wild, Wild_+4, Wild_+4, Wild_+4, Wild_+4}
