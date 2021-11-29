@@ -27,7 +27,7 @@ With regards to playing a card, each card in the player's hand is displayed in t
 Disclaimers: 
 *If there is no reaction after entering the input, press enter again as the player may have just entered the input too quickly.
 *Our implementation is created with a single round of UNO in mind. In order to play another round, the player must run the code again. This is a result of the memory allocation style used.
-
+*The game is set for play by no more than 8 players(AI/Human) total.
 
 How to compile/run code: We chose to run our code on CLion using C++14 on both windows and mac.
 
