@@ -14,6 +14,9 @@
 #include <time.h>    // ^
 
 using namespace std;
+int randomNum(int mod) {
+    return (rand() % mod);
+}
 
 class UNO_game {
 public:
@@ -126,7 +129,7 @@ public:
                     unshuffled.push_back(deck.front());
                     deck.pop();
                 }
-                random_shuffle(unshuffled.begin(), unshuffled.end());
+                random_shuffle(unshuffled.begin(), unshuffled.end(), randomNum);
                 while (!unshuffled.empty()) {
                     deck.push(unshuffled.back());
                     unshuffled.pop_back();
@@ -321,7 +324,7 @@ public:
         string name;
         int type;
         int AICount = 1;
-        while(menu=='y'){
+        while(menu=='y' && (players.size() <= 7)){
             cout<<"Would you like to add a human player or AI?\nPress 0 for human and 1 for AI:\n";
             cin>>type;
             if(type==0){ //runs if user wants to add human player
@@ -337,8 +340,10 @@ public:
             }
             cardDeck->lastCard = cardDeck->deck.back();
 
-            cout<<"Would you like to add another player? \nPress 'y' if you want to add another player or 'n' if not\n";
-            cin>>menu;
+            if(players.size() <= 7) {
+                cout << "Would you like to add another player? \nPress 'y' if you want to add another player or 'n' if not\n";
+                cin >> menu;
+            }
 
         }
         for(int i = 0; i<players.size();i++){
@@ -350,6 +355,8 @@ public:
 
     int roundCounter = 0;
     bool reverseStatus = false;
+
+
 
     bool compareCard(Card* playedCard){
         //separate results depending on if player is AI or not
@@ -522,7 +529,8 @@ public:
                     Card *tmp = currPlayer->getCard(playerInputInt-1);
                     cardDeck->discard(currPlayer->discardCard(playerInputInt-1));
                     cardEffect(tmp, cardDeck);
-                    currPlayer->unoInput(cardDeck);
+                    if(!(currPlayer->emptyHand()))
+                        currPlayer->unoInput(cardDeck);
                     valid = true;
                 }
             }
