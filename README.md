@@ -4,7 +4,7 @@ UNO Final Project
 Description of the game it models: 
 The game that we selected is UNO, in which the primary objective is to get rid of your cards faster than any other player in the game. To begin, each player is dealt 7 cards, which include a mixture of regular cards and special cards. The regular cards have 1 of 4 colors(Red,Green,Yellow,Blue) and 1 of 10 numbers(0-9). Within the special cards, there are those with a predetermined color(Reverse, Skip, and Draw 2) and those that have no color associated with them to begin(Wild, Wild Draw 4). Each of the special cards does as follows:
 
-Reverse - Switches the order of the gameplay(ie player 1 then player 2 then player 3 plays to player 3 then player 2 then player 1 plays)
+Reverse - Switches the order of the gameplay(ie player 1 then player 2 then player 3 plays -  CHANGES TO - player 3 then player 2 then player 1 plays)
 
 Skip - Passes the next player in the round for one turn(ie player 1 then player 3 plays)
 
