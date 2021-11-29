@@ -22,6 +22,13 @@ As mentioned above, all of the special cards are treated the same way they would
 Interesting Features: 
 Although many play the game with the option to stack the effects of Draw 2, Skip, and Wild Draw 4 cards, the true rules are clear that these feature is not allowed. Therefore, whenever a player plays any of the aforementioned cards, the following player MUST accept the applicable penalty and cannot play the same card to double its effects for the next player.
 
+With regards to playing a card, each card in the player's hand is displayed in the format [Card X: Color Number]. To play the card, enter the number 'X' followed by the Enter button.
+
+Disclaimers: 
+*If there is no reaction after entering the input, press enter again as the player may have just entered the input too quickly.
+*Our implementation is created with a single round of UNO in mind. In order to play another round, the player must run the code again. This is a result of the memory allocation style used.
+
+
 How to compile/run code: We chose to run our code on CLion using C++14 on both windows and mac.
 
 Status Report: All elements of the code are fully functioning with all special cards and features working as expected.
