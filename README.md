@@ -1,5 +1,5 @@
 # Team_Unicode
-UNO Final Project - Developed during Fall 2021 Semester
+UNO Final Project - Developed during Fall 2021 Semester 
 
 Description of the game it models: 
 The game that we selected is UNO, in which the primary objective is to get rid of your cards faster than any other player in the game. To begin, each player is dealt 7 cards, which include a mixture of regular cards and special cards. The regular cards have 1 of 4 colors(Red,Green,Yellow,Blue) and 1 of 10 numbers(0-9). Within the special cards, there are those with a predetermined color(Reverse, Skip, and Draw 2) and those that have no color associated with them to begin(Wild, Wild Draw 4). According to the true rules of uno, each of the special cards does as follows:
